@@ -3,7 +3,6 @@ package main
 import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"log"
-	"strings"
 	"tasmotamanager/types"
 	"tasmotamanager/utils"
 )
@@ -12,8 +11,18 @@ func defaultReceiveHandler(_ mqtt.Client, msg mqtt.Message) {
 	log.Println("Received message:", string(msg.Payload()), "from topic:", msg.Topic())
 }
 
-func connectedHandler(_ mqtt.Client) {
+func getConnectedHandler(s *state) mqtt.OnConnectHandler {
 	log.Println("Connected")
+
+	return func(client mqtt.Client) {
+		utils.WaitForToken(client.SubscribeMultiple(
+			map[string]byte{
+				types.TasmotaSensorTopic: 1,
+				types.TasmotaStateTopic:  1,
+			},
+			getSensorHandler(s),
+		))
+	}
 }
 
 func disconnectedHandler(_ mqtt.Client, err error) {
@@ -24,20 +33,21 @@ func getSensorHandler(s *state) mqtt.MessageHandler {
 	return func(_ mqtt.Client, msg mqtt.Message) {
 		topic := msg.Topic()
 		deviceId := utils.GetDeviceId(topic)
+		topicSuffix := utils.GetTopicSuffix(topic)
 		payload := msg.Payload()
+		var sensorMessage *types.Sensor
+		var stateMessage *types.State
 
-		if strings.HasSuffix(topic, types.TasmotaSensorSuffix) {
-			ps := types.NewSensor()
-			ps.Unmarshal(payload)
-
-			s.updateSensor(deviceId, ps)
+		switch topicSuffix {
+		case types.TasmotaSensorSuffix:
+			sensorMessage = types.NewSensor()
+			sensorMessage.Unmarshal(payload)
+		case types.TasmotaStateSuffix:
+			stateMessage = types.NewState()
+			stateMessage.Unmarshal(payload)
 		}
 
-		if strings.HasSuffix(topic, types.TasmotaStateSuffix) {
-			ps := types.NewState()
-			ps.Unmarshal(payload)
+		s.update(deviceId, sensorMessage, stateMessage)
 
-			s.updateState(deviceId, ps)
-		}
 	}
 }
