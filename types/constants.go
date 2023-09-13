@@ -1,10 +1,8 @@
 package types
 
 const (
-	TasmotaConfigTopic = "tasmota/discovery/+/config"
-	TeleSuffix         = "tele"
-	StatSuffix         = "stat"
-	CmndSuffix         = "cmnd"
-	StateSuffix        = "STATE"
-	SensorSuffix       = "SENSOR"
+	TasmotaSensorTopic  = "tele/+/SENSOR"
+	TasmotaStateTopic   = "tele/+/STATE"
+	TasmotaSensorSuffix = "SENSOR"
+	TasmotaStateSuffix  = "STATE"
 )

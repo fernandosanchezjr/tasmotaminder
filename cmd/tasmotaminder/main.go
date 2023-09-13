@@ -12,16 +12,19 @@ func main() {
 	clientOptions := getClientOptions()
 
 	clientOptions.SetDefaultPublishHandler(defaultReceiveHandler)
-	clientOptions.OnConnect = connectHandler
-	clientOptions.OnConnectionLost = connectLostHandler
+	clientOptions.OnConnect = connectedHandler
+	clientOptions.OnConnectionLost = disconnectedHandler
 
 	client := mqtt.NewClient(clientOptions)
+	utils.WaitForToken(client.Connect())
 
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
-	}
-
-	utils.WaitForToken(client.Subscribe(types.TasmotaConfigTopic, 2, newConfigReceiveHandler(s)))
+	utils.WaitForToken(client.SubscribeMultiple(
+		map[string]byte{
+			types.TasmotaSensorTopic: 1,
+			types.TasmotaStateTopic:  1,
+		},
+		getSensorHandler(s),
+	))
 
 	utils.Wait()
 }

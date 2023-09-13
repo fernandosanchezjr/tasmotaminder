@@ -6,21 +6,21 @@ import (
 )
 
 type SensorEnergy struct {
-	TotalStartTime *UTCTime `json:"TotalStartTime"`
-	Total          float64  `json:"Total"`
-	Yesterday      float64  `json:"Yesterday"`
-	Today          float64  `json:"Today"`
-	Period         int      `json:"Period"`
-	Power          int      `json:"Power"`
-	ApparentPower  int      `json:"ApparentPower"`
-	ReactivePower  int      `json:"ReactivePower"`
-	Factor         float64  `json:"Factor"`
-	Voltage        int      `json:"Voltage"`
-	Current        float64  `json:"Current"`
+	TotalStartTime string  `json:"TotalStartTime"`
+	Total          float64 `json:"Total"`
+	Yesterday      float64 `json:"Yesterday"`
+	Today          float64 `json:"Today"`
+	Period         int     `json:"Period"`
+	Power          int     `json:"Power"`
+	ApparentPower  int     `json:"ApparentPower"`
+	ReactivePower  int     `json:"ReactivePower"`
+	Factor         float64 `json:"Factor"`
+	Voltage        int     `json:"Voltage"`
+	Current        float64 `json:"Current"`
 }
 
 type Sensor struct {
-	Time   *UTCTime      `json:"Time"`
+	Time   string        `json:"Time"`
 	Energy *SensorEnergy `json:"ENERGY"`
 }
 
@@ -42,4 +42,10 @@ func (se *SensorEnergy) String() string {
 		log.Fatalf("error marshalling SensorEnergy to JSON: %s", err)
 	}
 	return string(data)
+}
+
+func (s *Sensor) Unmarshal(payload []byte) {
+	if err := json.Unmarshal(payload, s); err != nil {
+		log.Fatalf("error unmarshalling sensor: %s", err)
+	}
 }
