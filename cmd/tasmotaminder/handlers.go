@@ -7,19 +7,23 @@ import (
 	"tasmotamanager/utils"
 )
 
+func getSubscriptionTopics() map[string]byte {
+	return map[string]byte{
+		types.TasmotaSensorTopic: 1,
+		types.TasmotaStateTopic:  1,
+	}
+}
+
 func defaultReceiveHandler(_ mqtt.Client, msg mqtt.Message) {
 	log.Println("Received message:", string(msg.Payload()), "from topic:", msg.Topic())
 }
 
 func getConnectedHandler(s *state) mqtt.OnConnectHandler {
-	log.Println("Connected")
-
 	return func(client mqtt.Client) {
+		log.Println("Connected")
+
 		utils.WaitForToken(client.SubscribeMultiple(
-			map[string]byte{
-				types.TasmotaSensorTopic: 1,
-				types.TasmotaStateTopic:  1,
-			},
+			getSubscriptionTopics(),
 			getSensorHandler(s),
 		))
 	}
