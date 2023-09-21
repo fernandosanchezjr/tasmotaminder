@@ -16,4 +16,7 @@ func WaitForToken(token mqtt.Token) {
 			log.Fatalf("error waiting for token: %s", err)
 		}
 	}
+	if err := token.Error(); err != nil {
+		log.Fatalf("error after waiting for token: %s", err)
+	}
 }

@@ -5,12 +5,14 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"os"
 	"tasmotamanager/utils"
+	"time"
 )
 
 const (
-	defaultHost     = "localhost"
-	defaultPort     = "1883"
-	defaultClientId = "tasmotaminder"
+	defaultHost       = "localhost"
+	defaultPort       = "1883"
+	defaultClientId   = "tasmotaminder"
+	connectionTimeout = 5 * time.Second
 )
 
 func getBrokerUrl() string {
@@ -26,6 +28,9 @@ func getClientOptions() *mqtt.ClientOptions {
 	clientOptions.SetClientID(utils.GetEnvOrDefault("CLIENT_ID", defaultClientId))
 	clientOptions.SetUsername(os.Getenv("BROKER_USERNAME"))
 	clientOptions.SetPassword(os.Getenv("BROKER_PASSWORD"))
+	clientOptions.SetAutoReconnect(true)
+	clientOptions.SetConnectTimeout(connectionTimeout)
+	clientOptions.SetPingTimeout(connectionTimeout)
 
 	return clientOptions
 }
