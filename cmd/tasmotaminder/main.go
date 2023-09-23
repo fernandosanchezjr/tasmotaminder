@@ -2,11 +2,12 @@ package main
 
 import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"tasmotamanager/types"
 	"tasmotamanager/utils"
 )
 
 func main() {
-	s := newState()
+	s := types.NewState(getRuleConfig())
 
 	clientOptions := getClientOptions()
 

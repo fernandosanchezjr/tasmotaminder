@@ -1,57 +1,144 @@
 package types
 
 import (
-	"encoding/json"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"log"
+	"strings"
+	"tasmotamanager/utils"
+	"time"
 )
 
-type Wifi struct {
-	AP        int    `json:"AP"`
-	SSId      string `json:"SSId"`
-	BSSId     string `json:"BSSId"`
-	Channel   int    `json:"Channel"`
-	Mode      string `json:"Mode"`
-	RSSI      int    `json:"RSSI"`
-	Signal    int    `json:"Signal"`
-	LinkCount int    `json:"LinkCount"`
-	Downtime  string `json:"Downtime"`
+const maxMessageTimeDifference = time.Second * 10
+
+type PlugState struct {
+	id                 string
+	sensor             *Sensor
+	sensorState        *SensorState
+	sensorUpdated      time.Time
+	sensorStateUpdated time.Time
+}
+
+type plugClient struct {
+	resetDuration time.Duration
+	plug          *PlugState
+	client        mqtt.Client
 }
 
 type State struct {
-	Time      string  `json:"Time"`
-	Uptime    string  `json:"Uptime"`
-	UptimeSec uint64  `json:"UptimeSec"`
-	Heap      uint64  `json:"Heap"`
-	SleepMode string  `json:"SleepMode"`
-	Sleep     uint64  `json:"Sleep"`
-	LoadAvg   float64 `json:"LoadAvg"`
-	MqttCount uint64  `json:"MqttCount"`
-	POWER1    string  `json:"POWER1"`
-	Wifi      *Wifi   `json:"Wifi"`
+	plugRules PlugRules
+	plugs     map[string]*PlugState
 }
 
-func NewState() *State {
-	return &State{Wifi: &Wifi{}}
+func newPlugState(id string) *PlugState {
+	return &PlugState{id: id}
 }
 
-func (s *State) String() string {
-	data, err := json.Marshal(s)
-	if err != nil {
-		log.Fatalf("error marshalling State to JSON: %s", err)
+func (ps *PlugState) resetTime() {
+	ps.sensorUpdated = time.Time{}
+	ps.sensorStateUpdated = time.Time{}
+}
+
+func (ps *PlugState) getRuleTarget(client mqtt.Client, rule *PlugRule) RuleTarget {
+	return &plugClient{
+		resetDuration: utils.DurationMax(
+			time.Second*time.Duration(rule.ResetDurationSeconds),
+			TasmotaDefaultResetDuration,
+		),
+		plug:   ps,
+		client: client,
 	}
-	return string(data)
 }
 
-func (w *Wifi) String() string {
-	data, err := json.Marshal(w)
-	if err != nil {
-		log.Fatalf("error marshalling Sensor to JSON: %s", err)
+func (ps *PlugState) triggerEvent(client mqtt.Client, s *State) {
+	if ps.sensorUpdated.IsZero() || ps.sensorStateUpdated.IsZero() {
+		return
 	}
-	return string(data)
+
+	difference := ps.sensorUpdated.Sub(ps.sensorStateUpdated).Abs()
+	ps.resetTime()
+
+	if difference > maxMessageTimeDifference {
+		log.Println("update time difference too large:", difference)
+	}
+
+	log.Println("Updated", ps.id)
+
+	rule := s.plugRules.GetPlug(ps.id)
+	if rule == nil {
+		return
+	}
+
+	log.Printf("Evaluating rule:\n%s", rule)
+	go rule.Evaluate(ps, ps.getRuleTarget(client, rule))
 }
 
-func (s *State) Unmarshal(payload []byte) {
-	if err := json.Unmarshal(payload, s); err != nil {
-		log.Fatalf("error unmarshalling state: %s", err)
+func (ps *PlugState) updateSensor(client mqtt.Client, state *State, sensor *Sensor) {
+	ps.sensor = sensor
+	ps.sensorUpdated = time.Now()
+
+	ps.triggerEvent(client, state)
+}
+
+func (ps *PlugState) updateSensorState(client mqtt.Client, state *State, sensorState *SensorState) {
+	ps.sensorState = sensorState
+	ps.sensorStateUpdated = time.Now()
+
+	ps.triggerEvent(client, state)
+}
+
+func NewState(plugRules PlugRules) *State {
+	log.Printf("Loaded rules:\n%s", plugRules)
+
+	return &State{plugRules: plugRules, plugs: make(map[string]*PlugState)}
+}
+
+func (s *State) getOrCreatePlug(id string) *PlugState {
+	ps, found := s.plugs[id]
+	if !found {
+		ps = newPlugState(id)
+		s.plugs[id] = ps
 	}
+
+	return ps
+}
+
+func (s *State) Update(client mqtt.Client, id string, sensor *Sensor, state *SensorState) {
+	ps := s.getOrCreatePlug(id)
+
+	if sensor != nil {
+		ps.updateSensor(client, s, sensor)
+	}
+
+	if state != nil {
+		ps.updateSensorState(client, s, state)
+	}
+}
+
+func (pc *plugClient) topic() string {
+	return strings.ReplaceAll(TasmotaCommandTopic, TasmotaCommandWildcard, pc.plug.id)
+}
+
+func (pc *plugClient) publish(value string) {
+	topic := pc.topic()
+	log.Println("Publishing to", topic, value)
+	utils.WaitForToken(pc.client.Publish(topic, 2, true, value))
+}
+
+func (pc *plugClient) Off() {
+	log.Println("Turning off", pc.plug.id)
+	pc.publish(TasmotaPowerOFF)
+}
+
+func (pc *plugClient) On() {
+	log.Println("Turning on", pc.plug.id)
+	pc.publish(TasmotaPowerON)
+}
+
+func (pc *plugClient) Reset() {
+	log.Println("Resetting", pc.plug.id)
+	pc.Off()
+
+	time.Sleep(pc.resetDuration)
+
+	pc.On()
 }

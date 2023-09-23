@@ -13,10 +13,10 @@ const (
 func WaitForToken(token mqtt.Token) {
 	for !token.WaitTimeout(tokenWaitTimeout) {
 		if err := token.Error(); err != nil {
-			log.Fatalf("error waiting for token: %s", err)
+			log.Printf("error waiting for token: %s", err)
 		}
 	}
 	if err := token.Error(); err != nil {
-		log.Fatalf("error after waiting for token: %s", err)
+		log.Printf("error after waiting for token: %s", err)
 	}
 }
