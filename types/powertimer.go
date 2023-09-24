@@ -36,7 +36,7 @@ func (pt *PowerTimer) Evaluate(plug *PlugState, target RuleTarget) {
 		return
 	}
 
-	log.Println("powerComparison succeeded")
+	log.Println("powerComparison condition met")
 
 	runtime := int(time.Since(pt.startTime).Seconds())
 
@@ -52,7 +52,7 @@ func (pt *PowerTimer) Evaluate(plug *PlugState, target RuleTarget) {
 		return
 	}
 
-	log.Println("runtimeSeconds succeeded")
+	log.Println("runtimeSeconds condition met")
 
 	pt.Action.Execute(target)
 	pt.started = false
