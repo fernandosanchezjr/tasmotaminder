@@ -18,5 +18,5 @@ func main() {
 	client := mqtt.NewClient(clientOptions)
 	utils.WaitForToken(client.Connect())
 
-	//utils.Wait()
+	utils.Wait()
 }
