@@ -73,7 +73,7 @@ func (pt *PowerTimer) act(target RuleTarget) {
 
 func (pt *PowerTimer) release() {
 	pt.mtx.Lock()
-	defer pt.mtx.Lock()
+	defer pt.mtx.Unlock()
 
 	pt.acting = false
 	pt.started = false
