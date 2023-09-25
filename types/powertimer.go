@@ -13,6 +13,7 @@ type PowerTimer struct {
 	Action          *RuleAction      `yaml:"action,omitempty"`
 	mtx             sync.Mutex
 	started         bool
+	acting          bool
 	startTime       time.Time
 }
 
@@ -23,7 +24,13 @@ func (pt *PowerTimer) Evaluate(plug *PlugState, target RuleTarget) {
 
 	if plug.sensorState.POWER1 == TasmotaPowerOFF {
 		log.Println("plug state", plug.sensorState.POWER1)
-		pt.started = false
+
+		go pt.release()
+		return
+	}
+
+	if pt.acting {
+		log.Println("plug performing action, waiting...")
 		return
 	}
 
@@ -54,6 +61,20 @@ func (pt *PowerTimer) Evaluate(plug *PlugState, target RuleTarget) {
 
 	log.Println("runtimeSeconds condition met")
 
+	pt.acting = true
+	go pt.act(target)
+}
+
+func (pt *PowerTimer) act(target RuleTarget) {
+	defer pt.release()
+
 	pt.Action.Execute(target)
+}
+
+func (pt *PowerTimer) release() {
+	pt.mtx.Lock()
+	defer pt.mtx.Lock()
+
+	pt.acting = false
 	pt.started = false
 }
