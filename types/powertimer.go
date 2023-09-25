@@ -22,15 +22,15 @@ func (pt *PowerTimer) Evaluate(plug *PlugState, target RuleTarget) {
 	mtx.Lock()
 	defer mtx.Unlock()
 
+	if pt.acting {
+		log.Println("plug performing action, waiting...")
+		return
+	}
+
 	if plug.sensorState.POWER1 == TasmotaPowerOFF {
 		log.Println("plug state", plug.sensorState.POWER1)
 
 		go pt.release()
-		return
-	}
-
-	if pt.acting {
-		log.Println("plug performing action, waiting...")
 		return
 	}
 
