@@ -6,9 +6,10 @@ import (
 )
 
 type PlugRule struct {
-	DeviceId             string      `yaml:"deviceId"`
-	ResetDurationSeconds int         `yaml:"resetDurationSeconds,omitempty"`
-	PowerTimer           *PowerTimer `yaml:"powerTimer,omitempty"`
+	DeviceId             string           `yaml:"deviceId"`
+	ResetDurationSeconds int              `yaml:"resetDurationSeconds,omitempty"`
+	PowerTimer           *PowerTimer      `yaml:"powerTimer,omitempty"`
+	PowerSchedules       []*PowerSchedule `yaml:"powerSchedules,omitempty"`
 }
 
 type PlugRules []*PlugRule

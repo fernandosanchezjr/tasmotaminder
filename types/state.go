@@ -2,94 +2,74 @@ package types
 
 import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/go-co-op/gocron"
 	"log"
-	"strings"
-	"tasmotamanager/utils"
 	"time"
 )
-
-const maxMessageTimeDifference = time.Second * 10
-
-type PlugState struct {
-	id                 string
-	sensor             *Sensor
-	sensorState        *SensorState
-	sensorUpdated      time.Time
-	sensorStateUpdated time.Time
-}
-
-type plugClient struct {
-	resetDuration time.Duration
-	plug          *PlugState
-	client        mqtt.Client
-}
 
 type State struct {
 	plugRules PlugRules
 	plugs     map[string]*PlugState
-}
-
-func newPlugState(id string) *PlugState {
-	return &PlugState{id: id}
-}
-
-func (ps *PlugState) resetTime() {
-	ps.sensorUpdated = time.Time{}
-	ps.sensorStateUpdated = time.Time{}
-}
-
-func (ps *PlugState) getRuleTarget(client mqtt.Client, rule *PlugRule) RuleTarget {
-	return &plugClient{
-		resetDuration: utils.DurationMax(
-			time.Second*time.Duration(rule.ResetDurationSeconds),
-			TasmotaDefaultResetDuration,
-		),
-		plug:   ps,
-		client: client,
-	}
-}
-
-func (ps *PlugState) triggerEvent(client mqtt.Client, s *State) {
-	if ps.sensorUpdated.IsZero() || ps.sensorStateUpdated.IsZero() {
-		return
-	}
-
-	difference := ps.sensorUpdated.Sub(ps.sensorStateUpdated).Abs()
-	ps.resetTime()
-
-	if difference > maxMessageTimeDifference {
-		log.Println("update time difference too large:", difference)
-	}
-
-	log.Println("Updated", ps.id)
-
-	rule := s.plugRules.GetPlug(ps.id)
-	if rule == nil {
-		return
-	}
-
-	log.Printf("Evaluating rule:\n%s", rule)
-	go rule.Evaluate(ps, ps.getRuleTarget(client, rule))
-}
-
-func (ps *PlugState) updateSensor(client mqtt.Client, state *State, sensor *Sensor) {
-	ps.sensor = sensor
-	ps.sensorUpdated = time.Now()
-
-	ps.triggerEvent(client, state)
-}
-
-func (ps *PlugState) updateSensorState(client mqtt.Client, state *State, sensorState *SensorState) {
-	ps.sensorState = sensorState
-	ps.sensorStateUpdated = time.Now()
-
-	ps.triggerEvent(client, state)
+	scheduler *gocron.Scheduler
 }
 
 func NewState(plugRules PlugRules) *State {
 	log.Printf("Loaded rules:\n%s", plugRules)
 
-	return &State{plugRules: plugRules, plugs: make(map[string]*PlugState)}
+	s := &State{
+		plugRules: plugRules,
+		plugs:     make(map[string]*PlugState),
+		scheduler: gocron.NewScheduler(time.Local),
+	}
+
+	return s
+}
+
+func (s *State) SetupSchedules(client mqtt.Client) {
+	for _, plugRule := range s.plugRules {
+		deviceId := plugRule.DeviceId
+
+		for _, schedule := range plugRule.PowerSchedules {
+
+			cron, action := schedule.Cron, schedule.Action
+
+			_, err := s.scheduler.Cron(cron).Do(
+				s.getScheduleHandler(client, deviceId, cron, action, plugRule))
+
+			if err != nil {
+				log.Fatal("Invalid cron", err)
+			}
+			log.Println(
+				"Started schedule",
+				schedule.Cron,
+				schedule.Action,
+				"for plug",
+				plugRule.DeviceId,
+			)
+		}
+	}
+}
+
+func (s *State) getScheduleHandler(
+	client mqtt.Client,
+	deviceId string,
+	cron string,
+	action *RuleAction,
+	plugRule *PlugRule,
+) func() {
+	return func() {
+		ps := s.getOrCreatePlug(deviceId)
+
+		log.Println(
+			"Executing on schedule",
+			cron,
+			action,
+			"for plug",
+			deviceId,
+		)
+
+		action.Execute(ps.getRuleTarget(client, plugRule))
+	}
 }
 
 func (s *State) getOrCreatePlug(id string) *PlugState {
@@ -114,31 +94,12 @@ func (s *State) Update(client mqtt.Client, id string, sensor *Sensor, state *Sen
 	}
 }
 
-func (pc *plugClient) topic() string {
-	return strings.ReplaceAll(TasmotaCommandTopic, TasmotaCommandWildcard, pc.plug.id)
+func (s *State) Start() {
+	log.Println("Starting scheduler")
+	s.scheduler.StartAsync()
 }
 
-func (pc *plugClient) publish(value string) {
-	topic := pc.topic()
-	log.Println("Publishing to", topic, value)
-	utils.WaitForToken(pc.client.Publish(topic, 2, true, value))
-}
-
-func (pc *plugClient) Off() {
-	log.Println("Turning off", pc.plug.id)
-	pc.publish(TasmotaPowerOFF)
-}
-
-func (pc *plugClient) On() {
-	log.Println("Turning on", pc.plug.id)
-	pc.publish(TasmotaPowerON)
-}
-
-func (pc *plugClient) Reset() {
-	log.Println("Resetting", pc.plug.id)
-	pc.Off()
-
-	time.Sleep(pc.resetDuration)
-
-	pc.On()
+func (s *State) Stop() {
+	log.Println("Stopping scheduler")
+	s.scheduler.Stop()
 }

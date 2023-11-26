@@ -22,6 +22,8 @@ func getConnectedHandler(s *types.State) mqtt.OnConnectHandler {
 	return func(client mqtt.Client) {
 		log.Println("Connected")
 
+		s.Start()
+
 		utils.WaitForToken(client.SubscribeMultiple(
 			getSubscriptionTopics(),
 			getSensorHandler(s),
@@ -29,8 +31,12 @@ func getConnectedHandler(s *types.State) mqtt.OnConnectHandler {
 	}
 }
 
-func disconnectedHandler(_ mqtt.Client, err error) {
-	log.Println("Disconnected", err)
+func getDisconnectedHandler(s *types.State) mqtt.ConnectionLostHandler {
+	return func(_ mqtt.Client, err error) {
+		log.Println("Disconnected")
+
+		s.Stop()
+	}
 }
 
 func getSensorHandler(s *types.State) mqtt.MessageHandler {
