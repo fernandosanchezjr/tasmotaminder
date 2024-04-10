@@ -1,6 +1,14 @@
 # tasmotaminder
 
-Manage Tasmota smart plugs connected to an MQTT server with a simple yaml configuration.
+Manage Tasmota smart plugs connected to an MQTT broker with a simple yaml configuration.
+
+## Features
+
+* No additional system dependencies required once compiled
+* Simple YAML-based configuration
+* Low resource footprint: 8 MiB RAM usage on average. CPU use negligible. Perfect for Raspberry Pis and other constrained devices.
+* Private: only needs access to your MQTT broker and nothing else
+* Convenient: can be run locally or in a docker container
 
 ## Supported devices
 
