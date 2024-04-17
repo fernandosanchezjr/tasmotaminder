@@ -6,7 +6,7 @@ Manage Tasmota smart plugs connected to an MQTT broker with a simple yaml config
 
 * No additional system dependencies required once compiled
 * Simple YAML-based configuration
-* Low resource footprint: 8 MiB RAM usage on average. CPU use negligible. Perfect for Raspberry Pis and other constrained devices.
+* Small footprint: 8 MiB RAM usage on average. CPU use negligible. Perfect for Raspberry Pis and other constrained devices.
 * Private: only needs access to your MQTT broker and nothing else
 * Convenient: can be run locally or in a docker container
 
