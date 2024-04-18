@@ -1,5 +1,7 @@
 # tasmotaminder
 
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/fernandosanchezjr)
+
 Manage Tasmota smart plugs connected to an MQTT broker with a simple yaml configuration.
 
 ```yaml
