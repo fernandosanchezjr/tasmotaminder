@@ -3,19 +3,21 @@
 Manage Tasmota smart plugs connected to an MQTT broker with a simple yaml configuration.
 
 ```yaml
-# bike plug: let this plug run until the device is consuming less than 8 Watts, which seems to be when the 
+# bike plug: let this plug run until the device is consuming less than 8 Watts, when the 
 # light goes green on the charger
 - deviceId: EZPlug_6E6729
   powerTimer:
     # device consumes 8 Watts or less
     power: 8
-    # power comparison options: lessThan (<), greaterThan (>=), equalTo (==). Defaults to greaterThan.
-    powerComparison: lessThan 
+    # power comparison options: lessThan (<), greaterThan (>=), equalTo (==)
+    # defaults to greaterThan.
+    powerComparison: lessThan
     action: off
 
 # outside xmas lights plug - turn on at 5 PM, then turn off at 10 PM
 - deviceId: EZPlug_8B4EB2
-  # no limit on the number of schedules allowed for a plug - can be combined with powerTimer entries
+  # no limit on the number of schedules allowed for a plug - can be combined with 
+  # powerTimer entries
   powerSchedules:
     # cron spec for 17:00 every day
     - cron: 0 17 * * *
@@ -141,19 +143,21 @@ Here is an example config file stored in `/etc/tasmotaminder/rules.yaml`:
     # power off after runtime
     action: off
 
-# bike plug: let this plug run until the device is consuming less than 8 Watts, which seems to be when the 
+# bike plug: let this plug run until the device is consuming less than 8 Watts, when the 
 # light goes green on the charger
 - deviceId: EZPlug_6E6729
   powerTimer:
     # device consumes 8 Watts or less
     power: 8
-    # power comparison options: lessThan (<), greaterThan (>=), equalTo (==). Defaults to greaterThan.
+    # power comparison options: lessThan (<), greaterThan (>=), equalTo (==)
+    # defaults to greaterThan.
     powerComparison: lessThan
     action: off
 
 # outside xmas lights plug - turn on at 5 PM, then turn off at 10 PM
 - deviceId: EZPlug_8B4EB2
-  # no limit on the number of schedules allowed for a plug - can be combined with powerTimer entries
+  # no limit on the number of schedules allowed for a plug - can be combined with 
+  # powerTimer entries
   powerSchedules:
     # cron spec for 17:00 every day
     - cron: 0 17 * * *
