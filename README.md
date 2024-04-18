@@ -150,7 +150,7 @@ Here is an example config file stored in `/etc/tasmotaminder/rules.yaml`:
     # device consumes 8 Watts or less
     power: 8
     # power comparison options: lessThan (<), greaterThan (>=), equalTo (==)
-    # defaults to greaterThan.
+    # defaults to greaterThan
     powerComparison: lessThan
     action: off
 
