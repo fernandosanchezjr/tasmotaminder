@@ -54,22 +54,30 @@ Manage Tasmota smart plugs connected to an MQTT broker with a simple yaml config
   * System user: if running as a systemd unit, create a system user as follows `sudo adduser --system --no-create-home --group --disabled-login tasmotaminder`. Replace `tasmotaminder` with your desired username. This will create a group with the same name, which is convenient for admin users.
   * Config folder: if running as a system service, instead of compartmentalized in a docker container, it is useful to set up reasonable permissions on the config folder: `sudo mkdir -m 770 -p /etc/tasmotaminder && sudo chown -R tasmotaminder:tasmotaminder /etc/tasmotaminder`
 
+## Install pre-compiled binaries
+
+* Download the correct package for your architecture from the [Releases](https://github.com/fernandosanchezjr/tasmotaminder/releases) page
+* Extract the .tar.gz package
+* Copy the `tasmotaminder` binary to an appropriate location, such as `/usr/local/bin/tasmotaminder` on linux
+* As a basic sense-check, run the program now without configuration. You should see output similar to the following:
+  ```shell
+  $ tasmotaminder
+  2024/04/10 11:39:24 error opening rule config file: open /etc/tasmotaminder/rules.yaml: no such file or directory
+  ```
+
 ## Compilation
 
-From the root of the git repo, run the following command:
-
-```shell
-go build ./cmd/tasmotaminder
-```
-
-This will result in a `tasmotaminder` binary in the root folder. Copy the file to a convenient location, such as `/usr/local/bin/tasmotaminder`.
-
-As a basic sense-check, run the program now without configuration. You should see output similar to the following:
-
-```shell
-$ tasmotaminder
-2024/04/10 11:39:24 error opening rule config file: open /etc/tasmotaminder/rules.yaml: no such file or directory
-```
+* Clone this repo
+* From the root of the git repo, run the following command:
+  ```shell
+  go build ./cmd/tasmotaminder
+  ```
+* You should now have a `tasmotaminder` binary in the root folder. Copy the file to a convenient location, such as `/usr/local/bin/tasmotaminder`.
+* As a basic sense-check, run the program now without configuration. You should see output similar to the following:
+  ```shell
+  $ tasmotaminder
+  2024/04/10 11:39:24 error opening rule config file: open /etc/tasmotaminder/rules.yaml: no such file or directory
+  ```
 
 ## Environment Variables
 
