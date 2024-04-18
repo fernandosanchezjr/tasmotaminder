@@ -2,13 +2,37 @@
 
 Manage Tasmota smart plugs connected to an MQTT broker with a simple yaml configuration.
 
+```yaml
+# bike plug: let this plug run until the device is consuming less than 8 Watts, which seems to be when the 
+# light goes green on the charger
+- deviceId: EZPlug_6E6729
+  powerTimer:
+    # device consumes 8 Watts or less
+    power: 8
+    # power comparison options: lessThan (<), greaterThan (>=), equalTo (==). Defaults to greaterThan.
+    powerComparison: lessThan 
+    action: off
+
+# outside xmas lights plug - turn on at 5 PM, then turn off at 10 PM
+- deviceId: EZPlug_8B4EB2
+  # no limit on the number of schedules allowed for a plug - can be combined with powerTimer entries
+  powerSchedules:
+    # cron spec for 17:00 every day
+    - cron: 0 17 * * *
+      action: on
+    # cron spec for 22:00 every day
+    - cron: 0 22 * * *
+      action: off
+```
+
 ## Features
 
-* No additional system dependencies required once compiled
+* Turn smart plugs off/on/reset after consuming greaterThan/lessThan/equalTo watts for a specified runtime
+* Turn smart plugs on/off on schedules defined by simple cron notation
+* No additional system dependencies required
 * Simple YAML-based configuration
 * Small footprint: 8 MiB RAM usage on average. CPU use negligible. Perfect for Raspberry Pis and other constrained devices.
 * Private: only needs access to your MQTT broker and nothing else
-* Convenient: can be run locally or in a docker container
 
 ## Supported devices
 
@@ -97,39 +121,54 @@ Here is an example config file stored in `/etc/tasmotaminder/rules.yaml`:
 ```yaml
 # coffee maker plug: if it consumes 1 Watt or more, let it run for 1 hour, then reset
 - deviceId: EZPlug_10BFE3
-  resetDurationSeconds: 300  # the coffeemaker will forget about the coffee cycle if powered off for a few seconds
+  # the coffeemaker will forget about the coffee cycle if powered off for a few seconds
+  resetDurationSeconds: 300
   powerTimer:
-    power: 1  # device consumes 1 Watt or more
-    runtimeSeconds: 3600  # let the device run for 3600 seconds
-    action: reset  # reset after runtime
+    # device consumes 1 Watt or more
+    power: 1
+    # let the device run for 3600 seconds
+    runtimeSeconds: 3600
+    # reset after runtime
+    action: reset
 
 # drumset plug: my daughter forgets to turn this off, so let her play for an hour
 - deviceId: EZPlug_8B4E91
   powerTimer:
-    power: 1  # device consumes 1 Watt or more
-    runtimeSeconds: 3600  # let the device run for 3600 seconds
-    action: off  # power off after runtime
+    # device consumes 1 Watt or more
+    power: 1
+    # let the device run for 3600 seconds
+    runtimeSeconds: 3600
+    # power off after runtime
+    action: off
 
-# bike plug: let this plug run until the device is consuming less than 8 Watts, which seems to be the green light on the charger
+# bike plug: let this plug run until the device is consuming less than 8 Watts, which seems to be when the 
+# light goes green on the charger
 - deviceId: EZPlug_6E6729
   powerTimer:
-    power: 8  # device consumes 8 Watts or less
-    powerComparison: lessThan  # power comparison options: lessThan (<), greaterThan (>=), equalTo (==). Defaults to greaterThan.
+    # device consumes 8 Watts or less
+    power: 8
+    # power comparison options: lessThan (<), greaterThan (>=), equalTo (==). Defaults to greaterThan.
+    powerComparison: lessThan
     action: off
 
 # outside xmas lights plug - turn on at 5 PM, then turn off at 10 PM
 - deviceId: EZPlug_8B4EB2
-  powerSchedules:  # no explicit limit on the number of schedules allowed for a plug - may be combined with powerTimer entries if sensical.
-  - cron: 0 17 * * *  # cron spec for 17:00 every day
-    action: on
-  - cron: 0 22 * * *  # cron spec for 22:00 every day
-    action: off
+  # no limit on the number of schedules allowed for a plug - can be combined with powerTimer entries
+  powerSchedules:
+    # cron spec for 17:00 every day
+    - cron: 0 17 * * *
+      action: on
+    # cron spec for 22:00 every day
+    - cron: 0 22 * * *
+      action: off
 
 # front window xmas lights plug - turn on at 7 PM, then turn off at 9 PM
 - deviceId: EZPlug_8B490A
   powerSchedules:
-  - cron: 0 19 * * *  # cron spec for 19:00 every day
+  # cron spec for 19:00 every day
+  - cron: 0 19 * * *
     action: on
-  - cron: 0 21 * * *  # cron spec for 21:00 every day
+  # cron spec for 21:00 every day
+  - cron: 0 21 * * *
     action: off
 ```
