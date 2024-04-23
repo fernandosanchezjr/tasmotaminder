@@ -136,7 +136,7 @@ Here is an example config file stored in `/etc/tasmotaminder/rules.yaml`:
   # the coffeemaker will forget about the coffee cycle if powered off for a few seconds
   resetDurationSeconds: 300
   powerTimer:
-    # device consumes 1 Watt or more
+    # device consumes more than 1 Watt
     power: 1
     # let the device run for 3600 seconds
     runtimeSeconds: 3600
@@ -186,3 +186,7 @@ Here is an example config file stored in `/etc/tasmotaminder/rules.yaml`:
   - cron: 0 21 * * *
     action: off
 ```
+
+### Loading and reloading settings
+
+Settings and environment variables are only read at start time. If you change any rule or environment variable you must restart the service for the changes to take effect. If using the suggested Systemd unit, restarting is possible with `systemctl restart tasmotaminder.service`.
