@@ -187,6 +187,8 @@ Here is an example config file stored in `/etc/tasmotaminder/rules.yaml`:
     action: off
 ```
 
+For more configuration examples, see the [wiki](https://github.com/fernandosanchezjr/tasmotaminder/wiki).
+
 ### Loading and reloading settings
 
 Settings and environment variables are only read at start time. If you change any rule or environment variable you must restart the service for the changes to take effect. If using the suggested Systemd unit, restarting is possible with `systemctl restart tasmotaminder.service`.
