@@ -17,6 +17,8 @@ const (
 	defaultClientId           = "tasmotaminder"
 	defaultRuleConfigLocation = "/etc/tasmotaminder/rules.yaml"
 	connectionTimeout         = 5 * time.Second
+	defaultNtfyToken          = ""
+	defaultNtfyURL            = ""
 )
 
 func getBrokerUrl() string {
@@ -54,4 +56,11 @@ func getRuleConfig() types.PlugRules {
 	}
 
 	return rules
+}
+
+func getNtfyConfig() (string, string) {
+	token := utils.GetEnvOrDefault("NTFY_TOKEN", defaultNtfyToken)
+	url := utils.GetEnvOrDefault("NTFY_URL", defaultNtfyURL)
+
+	return token, url
 }
