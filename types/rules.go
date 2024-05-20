@@ -10,6 +10,8 @@ type PlugRule struct {
 	ResetDurationSeconds int              `yaml:"resetDurationSeconds,omitempty"`
 	PowerTimer           *PowerTimer      `yaml:"powerTimer,omitempty"`
 	PowerSchedules       []*PowerSchedule `yaml:"powerSchedules,omitempty"`
+	Notify               bool             `yaml:"notify,omitempty"`   // Added Notify field
+	Nickname             string           `yaml:"nickname,omitempty"` // Added Nickname field
 }
 
 type PlugRules []*PlugRule
@@ -42,8 +44,16 @@ func (p *PlugRule) String() string {
 	return string(data)
 }
 
-func (p *PlugRule) Evaluate(plug *PlugState, target RuleTarget) {
+func (p *PlugRule) Evaluate(state *State, plug *PlugState, target RuleTarget) {
 	if p.PowerTimer != nil {
-		p.PowerTimer.Evaluate(plug, target)
+		p.PowerTimer.Evaluate(state, plug, p, target)
 	}
+}
+
+// DeviceName returns the Nickname if it's not an empty string, otherwise returns the DeviceId
+func (p *PlugRule) DeviceName() string {
+	if p.Nickname != "" {
+		return p.Nickname
+	}
+	return p.DeviceId
 }

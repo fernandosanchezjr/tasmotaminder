@@ -64,7 +64,7 @@ func (ps *PlugState) triggerEvent(client mqtt.Client, s *State) {
 	}
 
 	log.Printf("Evaluating rule:\n%s", rule)
-	go rule.Evaluate(ps, ps.getRuleTarget(client, rule))
+	go rule.Evaluate(s, ps, ps.getRuleTarget(client, rule))
 }
 
 func (ps *PlugState) updateSensor(client mqtt.Client, state *State, sensor *Sensor) {

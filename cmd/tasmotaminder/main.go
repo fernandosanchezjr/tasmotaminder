@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	s := types.NewState(getRuleConfig())
+	s := types.NewState(getRuleConfig(), notify)
 	defer s.Stop()
 
 	clientOptions := getClientOptions()

@@ -1,25 +1,30 @@
 package types
 
 import (
+	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-co-op/gocron"
 	"log"
 	"time"
 )
 
+type NotifyFunc func(title string, tags string, body string) error
+
 type State struct {
 	plugRules PlugRules
 	plugs     map[string]*PlugState
 	scheduler *gocron.Scheduler
+	notify    NotifyFunc
 }
 
-func NewState(plugRules PlugRules) *State {
+func NewState(plugRules PlugRules, notifier NotifyFunc) *State {
 	log.Printf("Loaded rules:\n%s", plugRules)
 
 	s := &State{
 		plugRules: plugRules,
 		plugs:     make(map[string]*PlugState),
 		scheduler: gocron.NewScheduler(time.Local),
+		notify:    notifier, // Initialize the notify field
 	}
 
 	return s
@@ -55,7 +60,7 @@ func (s *State) getScheduleHandler(
 	deviceId string,
 	cron string,
 	action *RuleAction,
-	plugRule *PlugRule,
+	rule *PlugRule,
 ) func() {
 	return func() {
 		ps := s.getOrCreatePlug(deviceId)
@@ -68,7 +73,15 @@ func (s *State) getScheduleHandler(
 			deviceId,
 		)
 
-		action.Execute(ps.getRuleTarget(client, plugRule))
+		action.Execute(ps.getRuleTarget(client, rule))
+		if rule.Notify {
+			title := fmt.Sprintf("%s %s", rule.DeviceName(), action)
+			body := fmt.Sprintf("Executing from schedule %s", cron)
+			err := s.notify(title, "tasmotaminder,timer", body)
+			if err != nil {
+				log.Printf("Error sending notification: %v", err)
+			}
+		}
 	}
 }
 

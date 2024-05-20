@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -17,7 +18,7 @@ type PowerTimer struct {
 	startTime       time.Time
 }
 
-func (pt *PowerTimer) Evaluate(plug *PlugState, target RuleTarget) {
+func (pt *PowerTimer) Evaluate(state *State, plug *PlugState, rule *PlugRule, target RuleTarget) {
 	mtx := &pt.mtx
 	mtx.Lock()
 	defer mtx.Unlock()
@@ -62,13 +63,21 @@ func (pt *PowerTimer) Evaluate(plug *PlugState, target RuleTarget) {
 	log.Println("runtimeSeconds condition met")
 
 	pt.acting = true
-	go pt.act(target)
+	go pt.act(state, rule, target)
 }
 
-func (pt *PowerTimer) act(target RuleTarget) {
+func (pt *PowerTimer) act(state *State, rule *PlugRule, target RuleTarget) {
 	defer pt.release()
 
 	pt.Action.Execute(target)
+	if rule.Notify {
+		title := fmt.Sprintf("%s %s", rule.DeviceName(), pt.Action)
+		body := fmt.Sprintf("Executed from rule:\n%s", rule)
+		err := state.notify(title, "tasmotaminder,power", body)
+		if err != nil {
+			log.Printf("Error sending notification: %v", err)
+		}
+	}
 }
 
 func (pt *PowerTimer) release() {
